@@ -9,24 +9,46 @@ const AnswerButton = ({
   status,
   onClick,
   disabled,
+  isHidden = false,
 }) => {
-  let backgroundColor = '#f8f9fa';
-  let color = '#212529';
-  let borderColor = '#ced4da';
+  // Đáp án bị ẩn vẫn giữ chỗ trong lưới nhưng không có chữ và không bấm được
+  if (isHidden) {
+    return (
+      <button
+        type="button"
+        className="answer-btn answer-hidden"
+        disabled
+        style={{
+          padding: '14px 16px',
+          minHeight: '52px',
+          borderRadius: '6px',
+          border: '1.5px dashed #cbd5e1',
+          backgroundColor: '#f8fafc',
+          cursor: 'not-allowed',
+        }}
+      >
+        {/* Rỗng không có chữ */}
+      </button>
+    );
+  }
+
+  let backgroundColor = '#ffffff';
+  let color = '#1e293b';
+  let borderColor = '#cbd5e1';
 
   if (status === 'locked' && isSelected) {
-    backgroundColor = '#ffc107'; // Vàng khi đang chốt
-    color = '#212529';
-    borderColor = '#e0a800';
+    backgroundColor = '#fef08a'; // Vàng khi đang chốt
+    color = '#854d0e';
+    borderColor = '#eab308';
   } else if (status === 'revealed') {
     if (isCorrectAnswer) {
-      backgroundColor = '#28a745'; // Xanh lá khi đáp án đúng
-      color = '#ffffff';
-      borderColor = '#1e7e34';
+      backgroundColor = '#dcfce7'; // Xanh lá khi đáp án đúng
+      color = '#15803d';
+      borderColor = '#22c55e';
     } else if (isSelected) {
-      backgroundColor = '#dc3545'; // Đỏ khi chọn sai
-      color = '#ffffff';
-      borderColor = '#bd2130';
+      backgroundColor = '#fee2e2'; // Đỏ khi chọn sai
+      color = '#b91c1c';
+      borderColor = '#ef4444';
     }
   }
 
@@ -39,16 +61,17 @@ const AnswerButton = ({
       onClick={() => onClick(index)}
       disabled={isButtonDisabled}
       style={{
-        padding: '16px',
-        fontSize: '16px',
+        padding: '14px 16px',
+        fontSize: '15px',
         fontWeight: '500',
         borderRadius: '6px',
-        border: `2px solid ${borderColor}`,
+        border: `1.5px solid ${borderColor}`,
         backgroundColor: backgroundColor,
         color: color,
         cursor: isButtonDisabled ? 'not-allowed' : 'pointer',
         textAlign: 'left',
-        transition: 'background-color 0.2s, border-color 0.2s',
+        lineHeight: '1.4',
+        transition: 'background-color 0.15s, border-color 0.15s, color 0.15s',
       }}
     >
       {`${LETTERS[index]}. `}{option}
@@ -57,4 +80,3 @@ const AnswerButton = ({
 };
 
 export default AnswerButton;
-

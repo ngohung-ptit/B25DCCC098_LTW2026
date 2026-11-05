@@ -9,35 +9,23 @@ const QuestionCard = ({
   selectedAnswer,
   status,
   onSelectAnswer,
+  hiddenAnswerIndex = null,
 }) => {
   if (!question) return null;
 
   const headerInfo = `Câu ${currentIndex + 1}/${totalQuestions} · ${question.topic} · ${LEVELS[question.level]}`;
 
   return (
-    <div className="question-card" style={{ marginBottom: '24px' }}>
-      <div
-        className="question-card-header"
-        style={{ fontSize: '15px', color: '#6c757d', fontWeight: '600', marginBottom: '10px' }}
-      >
+    <div className="question-card">
+      <div className="question-card-header">
         {headerInfo}
       </div>
 
-      <div
-        className="question-text"
-        style={{ fontSize: '18px', fontWeight: 'bold', color: '#212529', marginBottom: '20px' }}
-      >
+      <div className="question-text">
         {question.question}
       </div>
 
-      <div
-        className="answer-grid"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: '12px',
-        }}
-      >
+      <div className="answer-grid">
         {question.options.map((option, index) => (
           <AnswerButton
             key={index}
@@ -47,6 +35,7 @@ const QuestionCard = ({
             isCorrectAnswer={index === question.answer}
             status={status}
             onClick={onSelectAnswer}
+            isHidden={hiddenAnswerIndex === index}
           />
         ))}
       </div>
@@ -55,4 +44,3 @@ const QuestionCard = ({
 };
 
 export default QuestionCard;
-

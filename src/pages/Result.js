@@ -26,64 +26,39 @@ const Result = () => {
     reasonTitle = reason || 'Kết quả lượt chơi';
   }
 
+  const isWin = reason === 'win' || reason === 'Chúc mừng! Bạn đã rung chuông vàng';
+
   return (
-    <div className="result-page" style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
-      <h2 style={{ color: reason === 'win' ? '#28a745' : '#dc3545', marginBottom: '24px' }}>
-        {reasonTitle}
-      </h2>
+    <div className="result-page">
+      <div className="result-card">
+        <h2 className="result-title" style={{ color: isWin ? '#16a34a' : '#dc2626' }}>
+          {reasonTitle}
+        </h2>
 
-      <div
-        className="result-details"
-        style={{
-          backgroundColor: '#f8f9fa',
-          padding: '24px',
-          borderRadius: '8px',
-          textAlign: 'left',
-          marginBottom: '24px',
-          fontSize: '16px',
-          lineHeight: '1.8',
-        }}
-      >
-        <p style={{ margin: '6px 0' }}>{`Người chơi: ${name}`}</p>
-        <p style={{ margin: '6px 0' }}>{`Số câu trả lời đúng: ${correctCount}`}</p>
-        <p style={{ margin: '6px 0' }}>{`Điểm: ${score}`}</p>
-        <p style={{ margin: '6px 0' }}>{`Danh hiệu: ${rank}`}</p>
-      </div>
+        <div className="result-details">
+          <p>{`Người chơi: ${name}`}</p>
+          <p>{`Số câu trả lời đúng: ${correctCount}`}</p>
+          <p>{`Điểm: ${score}`}</p>
+          <p>{`Danh hiệu: ${rank}`}</p>
+        </div>
 
-      <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
-        <button
-          type="button"
-          onClick={() => navigate('/play')}
-          style={{
-            padding: '10px 20px',
-            fontSize: '16px',
-            fontWeight: '600',
-            backgroundColor: '#007bff',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-          }}
-        >
-          Chơi lại
-        </button>
+        <div className="result-actions">
+          <button
+            type="button"
+            className="btn-primary-blue"
+            onClick={() => navigate('/play')}
+          >
+            Chơi lại
+          </button>
 
-        <button
-          type="button"
-          onClick={() => navigate('/')}
-          style={{
-            padding: '10px 20px',
-            fontSize: '16px',
-            fontWeight: '600',
-            backgroundColor: '#6c757d',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-          }}
-        >
-          Về trang chủ
-        </button>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => navigate('/')}
+          >
+            Về trang chủ
+          </button>
+        </div>
       </div>
     </div>
   );

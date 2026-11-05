@@ -17,6 +17,20 @@ const App = () => {
   const [error, setError] = useState(null);
   const [playerName, setPlayerName] = useState('');
 
+  // Lịch sử lượt chơi: lưu vào localStorage với key ltw_rcv_history
+  const [history, setHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ltw_rcv_history');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('ltw_rcv_history', JSON.stringify(history));
+  }, [history]);
+
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
@@ -41,19 +55,47 @@ const App = () => {
     };
   }, []);
 
+  const handleAddHistory = (record) => {
+    setHistory((prev) => [record, ...prev]);
+  };
+
+  const handleClearHistory = () => {
+    setHistory([]);
+  };
+
   return (
     <Routes>
       <Route path="/" element={<Layout loading={loading} error={error} />}>
         <Route
           index
-          element={<Home playerName={playerName} setPlayerName={setPlayerName} />}
+          element={
+            <Home
+              playerName={playerName}
+              setPlayerName={setPlayerName}
+              history={history}
+            />
+          }
         />
         <Route
           path="play"
-          element={<Play questions={questions} playerName={playerName} />}
+          element={
+            <Play
+              questions={questions}
+              playerName={playerName}
+              onAddHistory={handleAddHistory}
+            />
+          }
         />
         <Route path="result" element={<Result />} />
-        <Route path="history" element={<History />} />
+        <Route
+          path="history"
+          element={
+            <History
+              history={history}
+              onClearHistory={handleClearHistory}
+            />
+          }
+        />
         <Route
           path="questions"
           element={<QuestionBank questions={questions} />}

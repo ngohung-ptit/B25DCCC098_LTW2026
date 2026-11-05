@@ -24,9 +24,11 @@ const QuestionBank = ({ questions = [] }) => {
     <div className="question-bank-page">
       <h2>Ngân hàng câu hỏi</h2>
 
-      <div className="filters-container" style={{ display: 'flex', gap: '15px', alignItems: 'center', marginBottom: '15px' }}>
+      <div className="filters-container">
         <div>
-          <label htmlFor="topic-select" style={{ marginRight: '8px' }}>Chủ đề:</label>
+          <label htmlFor="topic-select" style={{ marginRight: '8px', fontSize: '14.5px', fontWeight: '500' }}>
+            Chủ đề:
+          </label>
           <select
             id="topic-select"
             value={selectedTopic}
@@ -42,7 +44,9 @@ const QuestionBank = ({ questions = [] }) => {
         </div>
 
         <div>
-          <label htmlFor="search-input" style={{ marginRight: '8px' }}>Tìm kiếm:</label>
+          <label htmlFor="search-input" style={{ marginRight: '8px', fontSize: '14.5px', fontWeight: '500' }}>
+            Tìm kiếm:
+          </label>
           <input
             id="search-input"
             type="text"
@@ -55,31 +59,32 @@ const QuestionBank = ({ questions = [] }) => {
 
       <p className="question-count">{`Có ${filteredQuestions.length} câu hỏi`}</p>
 
-      <table className="question-table" border="1" cellPadding="8" style={{ borderCollapse: 'collapse', width: '100%' }}>
-        <thead>
-          <tr style={{ backgroundColor: '#f2f2f2' }}>
-            <th style={{ width: '60px' }}>STT</th>
-            <th style={{ width: '120px' }}>Chủ đề</th>
-            <th style={{ width: '120px' }}>Mức độ</th>
-            <th>Câu hỏi</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredQuestions.map((q, index) => (
-            <tr key={q.id}>
-              <td style={{ textAlign: 'center' }}>{index + 1}</td>
-              <td>{q.topic}</td>
-              <td>{LEVELS[q.level]}</td>
-              <td>
-                <Link to={`/questions/${q.id}`}>{q.question}</Link>
-              </td>
+      <div className="table-wrapper">
+        <table className="question-table">
+          <thead>
+            <tr>
+              <th style={{ width: '64px', textAlign: 'center' }}>STT</th>
+              <th style={{ width: '130px' }}>Chủ đề</th>
+              <th style={{ width: '130px' }}>Mức độ</th>
+              <th>Câu hỏi</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {filteredQuestions.map((q, index) => (
+              <tr key={q.id}>
+                <td style={{ textAlign: 'center', color: '#64748b' }}>{index + 1}</td>
+                <td style={{ fontWeight: '500' }}>{q.topic}</td>
+                <td>{LEVELS[q.level]}</td>
+                <td>
+                  <Link to={`/questions/${q.id}`}>{q.question}</Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
 
 export default QuestionBank;
-

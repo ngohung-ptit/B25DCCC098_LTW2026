@@ -4,55 +4,44 @@ const ScoreBoard = ({ score = 0, currentIndex = 0, answers = [], totalQuestions 
   const slots = Array.from({ length: totalQuestions }, (_, i) => i + 1);
 
   return (
-    <div className="scoreboard" style={{ marginBottom: '20px' }}>
-      <div className="score-text" style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>
+    <div className="scoreboard">
+      <div className="score-text">
         {`Điểm: ${score}`}
       </div>
-      <div
-        className="score-slots"
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '8px',
-          alignItems: 'center',
-        }}
-      >
+      <div className="score-slots">
         {slots.map((num, i) => {
           const answer = answers[i];
           const isCorrect = answer && answer.correct;
+          const isLifebuoy = answer && answer.usedLifebuoy;
           const isCurrent = i === currentIndex;
 
-          let backgroundColor = '#e9ecef';
-          let textColor = '#495057';
-          let border = '1px solid #ced4da';
+          let backgroundColor = '#f1f5f9';
+          let textColor = '#64748b';
+          let border = '1px solid #cbd5e1';
 
           if (isCorrect) {
-            backgroundColor = '#28a745';
+            backgroundColor = '#22c55e';
             textColor = '#ffffff';
-            border = '1px solid #1e7e34';
+            border = '1px solid #16a34a';
+          } else if (isLifebuoy) {
+            // Ô của câu dùng phao có màu cam
+            backgroundColor = '#f97316';
+            textColor = '#ffffff';
+            border = '1px solid #ea580c';
           }
 
           if (isCurrent) {
-            border = '3px solid #212529';
+            border = '2.5px solid #0f172a';
           }
 
           return (
             <div
               key={num}
-              className={`slot-item ${isCurrent ? 'current' : ''} ${isCorrect ? 'correct' : ''}`}
+              className={`slot-item ${isCurrent ? 'current' : ''} ${isCorrect ? 'correct' : ''} ${isLifebuoy ? 'lifebuoy' : ''}`}
               style={{
-                width: '36px',
-                height: '36px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '4px',
-                fontWeight: 'bold',
-                fontSize: '14px',
                 backgroundColor: backgroundColor,
                 color: textColor,
                 border: border,
-                boxSizing: 'border-box',
               }}
             >
               {num}
@@ -65,4 +54,3 @@ const ScoreBoard = ({ score = 0, currentIndex = 0, answers = [], totalQuestions 
 };
 
 export default ScoreBoard;
-

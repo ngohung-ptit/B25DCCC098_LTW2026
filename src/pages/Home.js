@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const Home = ({ playerName, setPlayerName }) => {
+const Home = ({ playerName, setPlayerName, history = [] }) => {
   const navigate = useNavigate();
 
   const handleNameChange = (e) => {
@@ -17,13 +17,37 @@ const Home = ({ playerName, setPlayerName }) => {
 
   const isButtonDisabled = !playerName || !playerName.trim();
 
+  // Kỷ lục ở trang chủ: lượt có điểm cao nhất (chưa có lượt nào thì không hiện)
+  const topRecord = history && history.length > 0
+    ? [...history].sort((a, b) => b.score - a.score)[0]
+    : null;
+
   return (
     <div className="home-page">
       <h2>Rung chuông vàng</h2>
 
-      <div className="rules-summary" style={{ backgroundColor: '#f8f9fa', padding: '16px', borderRadius: '8px', marginBottom: '20px' }}>
+      {topRecord && (
+        <div
+          className="high-score-record"
+          style={{
+            backgroundColor: '#fef3c7',
+            border: '1px solid #fde68a',
+            color: '#92400e',
+            padding: '10px 16px',
+            borderRadius: '6px',
+            fontWeight: '600',
+            fontSize: '15px',
+            marginBottom: '18px',
+            maxWidth: '400px',
+          }}
+        >
+          {`Kỷ lục: ${topRecord.score} điểm - ${topRecord.name}`}
+        </div>
+      )}
+
+      <div className="card-box">
         <h3>Luật chơi:</h3>
-        <ul>
+        <ul className="rules-list">
           <li>Trả lời lần lượt 15 câu hỏi về HTML, CSS, JavaScript và React.</li>
           <li>Mỗi câu hỏi có thời gian suy nghĩ là 20 giây.</li>
           <li>Thang điểm: Câu dễ 10 điểm, câu trung bình 20 điểm, câu khó 30 điểm.</li>
@@ -32,35 +56,27 @@ const Home = ({ playerName, setPlayerName }) => {
         </ul>
       </div>
 
-      <form onSubmit={handleStart} className="player-form" style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '360px' }}>
-        <label htmlFor="player-name-input" style={{ fontWeight: '600' }}>
-          Tên người chơi:
-        </label>
-        <input
-          id="player-name-input"
-          type="text"
-          placeholder="Nhập tên của bạn..."
-          value={playerName}
-          onChange={handleNameChange}
-          style={{ padding: '8px 12px', fontSize: '15px', borderRadius: '4px', border: '1px solid #ccc' }}
-        />
-        <button
-          type="submit"
-          disabled={isButtonDisabled}
-          style={{
-            padding: '10px 16px',
-            fontSize: '16px',
-            fontWeight: 'bold',
-            color: '#fff',
-            backgroundColor: isButtonDisabled ? '#cccccc' : '#28a745',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: isButtonDisabled ? 'not-allowed' : 'pointer',
-          }}
-        >
-          Vào thi
-        </button>
-      </form>
+      <div className="card-box" style={{ maxWidth: '400px' }}>
+        <form onSubmit={handleStart} className="player-form" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <label htmlFor="player-name-input" style={{ fontWeight: '600', fontSize: '15px' }}>
+            Tên người chơi:
+          </label>
+          <input
+            id="player-name-input"
+            type="text"
+            placeholder="Nhập tên của bạn..."
+            value={playerName}
+            onChange={handleNameChange}
+          />
+          <button
+            type="submit"
+            disabled={isButtonDisabled}
+            className="primary-btn"
+          >
+            Vào thi
+          </button>
+        </form>
+      </div>
     </div>
   );
 };

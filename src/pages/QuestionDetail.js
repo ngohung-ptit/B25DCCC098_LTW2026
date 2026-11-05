@@ -21,7 +21,7 @@ const QuestionDetail = ({ questions = [] }) => {
     );
   }
 
-  const titleText = `Câu hỏi số ${question.id} – ${question.topic} (${LEVELS[question.level]}, ${POINTS[question.level]} điểm)`;
+  const titleText = `Câu hỏi số ${question.id} - ${question.topic} (${LEVELS[question.level]}, ${POINTS[question.level]} điểm)`;
 
   return (
     <div className="question-detail-page">

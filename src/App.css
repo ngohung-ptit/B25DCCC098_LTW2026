@@ -101,3 +101,7 @@ body {
   border-color: #28a745 !important;
   color: #155724 !important;
 }
+
+.answer-btn:hover:not(:disabled) {
+  background-color: #e2e6ea !important;
+}

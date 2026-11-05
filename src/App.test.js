@@ -1,8 +1,9 @@
 import React from 'react';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import axios from 'axios';
 import App from './App';
+import { calcScore, getRank } from './utils';
 
 jest.mock('axios');
 
@@ -45,7 +46,7 @@ describe('Bài 1 Tests', () => {
     });
 
     expect(screen.getByRole('heading', { name: 'Ngân hàng câu hỏi' })).toBeInTheDocument();
-    expect(screen.getAllByRole('row')).toHaveLength(16); // 1 header + 15 rows
+    expect(screen.getAllByRole('row')).toHaveLength(16);
   });
 
   test('Lọc theo chủ đề JavaScript còn 5 câu', async () => {
@@ -118,7 +119,7 @@ describe('Bài 1 Tests', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/Câu hỏi số 13 – CSS \(Khó, 30 điểm\)/)).toBeInTheDocument();
+      expect(screen.getByText(/Câu hỏi số 13 - CSS \(Khó, 30 điểm\)/)).toBeInTheDocument();
     });
 
     expect(screen.getByText(/div > p/)).toBeInTheDocument();
@@ -166,6 +167,262 @@ describe('Bài 1 Tests', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Không tải được câu hỏi')).toBeInTheDocument();
+    });
+  });
+});
+
+describe('Bài 2 Tests', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test('Hàm calcScore và getRank tính đúng điểm và danh hiệu', () => {
+    // Trả lời sai ở câu 3: 2 câu dễ đúng = 20 điểm -> Cần cố gắng
+    const ans1 = [
+      { id: 1, level: 1, correct: true },
+      { id: 2, level: 1, correct: true },
+      { id: 3, level: 1, correct: false },
+    ];
+    expect(calcScore(ans1)).toBe(20);
+    expect(getRank(calcScore(ans1))).toBe('Cần cố gắng');
+
+    // Hết giờ ở câu 8: 5 câu dễ (50) + 2 câu TB (40) = 90 điểm -> Cần cố gắng
+    const ans2 = [
+      { id: 1, level: 1, correct: true },
+      { id: 2, level: 1, correct: true },
+      { id: 3, level: 1, correct: true },
+      { id: 4, level: 1, correct: true },
+      { id: 5, level: 1, correct: true },
+      { id: 6, level: 2, correct: true },
+      { id: 7, level: 2, correct: true },
+      { id: 8, level: 2, correct: false },
+    ];
+    expect(calcScore(ans2)).toBe(90);
+    expect(getRank(calcScore(ans2))).toBe('Cần cố gắng');
+
+    // 150 điểm -> Khá
+    expect(getRank(150)).toBe('Khá');
+
+    // 240 điểm -> Xuất sắc
+    expect(getRank(240)).toBe('Xuất sắc');
+
+    // 300 điểm -> Rung chuông vàng
+    expect(getRank(300)).toBe('Rung chuông vàng');
+  });
+
+  test('Mở thẳng /play khi chưa nhập tên thì tự chuyển về trang chủ', async () => {
+    axios.get.mockResolvedValueOnce({ data: mockQuestions });
+
+    render(
+      <MemoryRouter initialEntries={['/play']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Rung chuông vàng' })).toBeInTheDocument();
+    });
+    expect(screen.getByLabelText('Tên người chơi:')).toBeInTheDocument();
+  });
+
+  test('Trang chủ: Nút Vào thi bị khóa khi ô tên trống hoặc chỉ có dấu cách', async () => {
+    axios.get.mockResolvedValueOnce({ data: mockQuestions });
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Rung chuông vàng' })).toBeInTheDocument();
+    });
+
+    const submitBtn = screen.getByRole('button', { name: 'Vào thi' });
+    expect(submitBtn).toBeDisabled();
+
+    const nameInput = screen.getByLabelText('Tên người chơi:');
+    fireEvent.change(nameInput, { target: { value: '   ' } });
+    expect(submitBtn).toBeDisabled();
+
+    fireEvent.change(nameInput, { target: { value: 'An' } });
+    expect(submitBtn).not.toBeDisabled();
+  });
+
+  test('Nhập tên "An", bấm Vào thi -> Vào màn hình thi với đầy đủ ScoreBoard, Timer, QuestionCard', async () => {
+    jest.useFakeTimers();
+    axios.get.mockResolvedValueOnce({ data: mockQuestions });
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Rung chuông vàng' })).toBeInTheDocument();
+    });
+
+    const nameInput = screen.getByLabelText('Tên người chơi:');
+    fireEvent.change(nameInput, { target: { value: 'An' } });
+
+    const submitBtn = screen.getByRole('button', { name: 'Vào thi' });
+    fireEvent.click(submitBtn);
+
+    expect(screen.getByText('Câu 1/15 · HTML · Dễ')).toBeInTheDocument();
+    expect(screen.getByText('Còn 20 giây')).toBeInTheDocument();
+    expect(screen.getByText('Điểm: 0')).toBeInTheDocument();
+
+    // Kiểm tra đồng hồ giảm mỗi giây
+    act(() => {
+      jest.advanceTimersByTime(1000);
+    });
+    expect(screen.getByText('Còn 19 giây')).toBeInTheDocument();
+
+    jest.useRealTimers();
+  });
+
+  test('Chọn B ở câu 1 -> Khóa nút, 2s sau lộ xanh, 1.5s sau sang câu 2/15, Điểm 10', async () => {
+    jest.useFakeTimers();
+    axios.get.mockResolvedValueOnce({ data: mockQuestions });
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Rung chuông vàng' })).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByLabelText('Tên người chơi:'), { target: { value: 'An' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Vào thi' }));
+
+    expect(screen.getByText('Câu 1/15 · HTML · Dễ')).toBeInTheDocument();
+
+    // B là index 1 ("<img>")
+    const btnB = screen.getByRole('button', { name: /B\. <img>/ });
+    fireEvent.click(btnB);
+
+    // Mọi nút bị khóa
+    expect(btnB).toBeDisabled();
+
+    // Sau 2 giây: lộ kết quả (B màu xanh)
+    act(() => {
+      jest.advanceTimersByTime(2000);
+    });
+
+    // Sau 1.5 giây nữa: sang câu 2/15
+    act(() => {
+      jest.advanceTimersByTime(1500);
+    });
+
+    expect(screen.getByText('Câu 2/15 · CSS · Dễ')).toBeInTheDocument();
+    expect(screen.getByText('Điểm: 10')).toBeInTheDocument();
+    expect(screen.getByText('Còn 20 giây')).toBeInTheDocument();
+
+    jest.useRealTimers();
+  });
+
+  test('Ở câu 2 chọn A (sai) -> chuyển sang trang kết quả: "Bạn đã bị loại"', async () => {
+    jest.useFakeTimers();
+    axios.get.mockResolvedValueOnce({ data: mockQuestions });
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Rung chuông vàng' })).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByLabelText('Tên người chơi:'), { target: { value: 'An' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Vào thi' }));
+
+    // Câu 1 chọn B (đúng)
+    fireEvent.click(screen.getByRole('button', { name: /B\. <img>/ }));
+    act(() => {
+      jest.advanceTimersByTime(2000);
+    });
+    act(() => {
+      jest.advanceTimersByTime(1500);
+    });
+
+    expect(screen.getByText('Câu 2/15 · CSS · Dễ')).toBeInTheDocument();
+
+    // Câu 2 chọn A (sai, đáp án đúng là C)
+    const btnA = screen.getByRole('button', { name: /A\. color/ });
+    fireEvent.click(btnA);
+
+    // Sau 2s lộ kết quả + 1.5s chuyển sang trang kết quả
+    act(() => {
+      jest.advanceTimersByTime(2000);
+    });
+    act(() => {
+      jest.advanceTimersByTime(1500);
+    });
+
+    expect(screen.getByRole('heading', { name: 'Bạn đã bị loại' })).toBeInTheDocument();
+    expect(screen.getByText('Người chơi: An')).toBeInTheDocument();
+    expect(screen.getByText('Số câu trả lời đúng: 1')).toBeInTheDocument();
+    expect(screen.getByText('Điểm: 10')).toBeInTheDocument();
+    expect(screen.getByText('Danh hiệu: Cần cố gắng')).toBeInTheDocument();
+
+    jest.useRealTimers();
+  });
+
+  test('Hết giờ ở câu 1 -> chuyển sang trang kết quả: "Hết giờ!"', async () => {
+    jest.useFakeTimers();
+    axios.get.mockResolvedValueOnce({ data: mockQuestions });
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Rung chuông vàng' })).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByLabelText('Tên người chơi:'), { target: { value: 'An' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Vào thi' }));
+
+    expect(screen.getByText('Câu 1/15 · HTML · Dễ')).toBeInTheDocument();
+
+    // Chờ 20 giây cho hết giờ
+    act(() => {
+      jest.advanceTimersByTime(20000);
+    });
+
+    // Sau khi hết giờ: lộ đáp án đúng ngay, 1.5s sau kết thúc
+    act(() => {
+      jest.advanceTimersByTime(1500);
+    });
+
+    expect(screen.getByRole('heading', { name: 'Hết giờ!' })).toBeInTheDocument();
+    expect(screen.getByText('Người chơi: An')).toBeInTheDocument();
+    expect(screen.getByText('Số câu trả lời đúng: 0')).toBeInTheDocument();
+    expect(screen.getByText('Điểm: 0')).toBeInTheDocument();
+    expect(screen.getByText('Danh hiệu: Cần cố gắng')).toBeInTheDocument();
+
+    jest.useRealTimers();
+  });
+
+  test('Mở /result trực tiếp khi không có state thì chuyển về trang chủ', async () => {
+    axios.get.mockResolvedValueOnce({ data: mockQuestions });
+
+    render(
+      <MemoryRouter initialEntries={['/result']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Rung chuông vàng' })).toBeInTheDocument();
     });
   });
 });

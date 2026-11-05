@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import QuestionCard from '../components/QuestionCard';
 import Timer from '../components/Timer';
@@ -7,54 +7,86 @@ import Helpers from '../components/Helpers';
 import { TIME_PER_QUESTION, EXTRA_TIME } from '../data';
 import { calcScore, getRank } from '../utils';
 
-const Play = ({ questions = [], playerName = '', onAddHistory }) => {
+const Play = ({
+  questions = [],
+  playerName = '',
+  onAddHistory,
+  selectedTopic = 'Tất cả',
+  shuffleAnswers = false,
+  speedBonusEnabled = false,
+}) => {
   const navigate = useNavigate();
 
+  const gameQuestions = useMemo(() => {
+    if (selectedTopic && selectedTopic !== 'Tất cả') {
+      return questions.filter((q) => q.topic === selectedTopic);
+    }
+    return questions;
+  }, [questions, selectedTopic]);
+
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [status, setStatus] = useState('answering'); // 'answering' | 'locked' | 'revealed'
+  const [status, setStatus] = useState('answering');
   const [timeLeft, setTimeLeft] = useState(TIME_PER_QUESTION);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [answers, setAnswers] = useState([]);
   const [endReason, setEndReason] = useState(null);
 
-  // Quyền trợ giúp
   const [usedHelp5050, setUsedHelp5050] = useState(false);
   const [usedHelpTime, setUsedHelpTime] = useState(false);
   const [usedHelpLifebuoy, setUsedHelpLifebuoy] = useState(false);
   const [isLifebuoyActive, setIsLifebuoyActive] = useState(false);
   const [hiddenAnswerIndex, setHiddenAnswerIndex] = useState(null);
 
-  // Refs để lưu giá trị mới nhất cho các callback / timer
   const currentQuestionRef = useRef(null);
   const answersRef = useRef([]);
   const currentIndexRef = useRef(0);
   const endReasonRef = useRef(null);
   const isLifebuoyActiveRef = useRef(false);
+  const timeLeftRef = useRef(20);
 
-  const currentQuestion = questions[currentIndex];
+  const rawQuestion = gameQuestions[currentIndex];
+
+  const currentQuestion = useMemo(() => {
+    if (!rawQuestion) return null;
+    if (!shuffleAnswers) return rawQuestion;
+
+    const items = rawQuestion.options.map((opt, idx) => ({ text: opt, originalIndex: idx }));
+    for (let i = items.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [items[i], items[j]] = [items[j], items[i]];
+    }
+
+    const newOptions = items.map((it) => it.text);
+    const newAnswer = items.findIndex((it) => it.originalIndex === rawQuestion.answer);
+
+    return {
+      ...rawQuestion,
+      options: newOptions,
+      answer: newAnswer,
+    };
+  }, [rawQuestion, shuffleAnswers]);
+
   currentQuestionRef.current = currentQuestion;
   answersRef.current = answers;
   currentIndexRef.current = currentIndex;
   endReasonRef.current = endReason;
   isLifebuoyActiveRef.current = isLifebuoyActive;
+  timeLeftRef.current = timeLeft;
 
-  // 1. Tiêu đề tab (document.title): Câu 7/15 - 70 điểm; rời màn hình thi trả lại "Rung chuông vàng"
   useEffect(() => {
     const currentScore = calcScore(answers);
-    document.title = `Câu ${currentIndex + 1}/${questions.length || 15} - ${currentScore} điểm`;
+    document.title = `Câu ${currentIndex + 1}/${gameQuestions.length || 15} - ${currentScore} điểm`;
 
     return () => {
       document.title = 'Rung chuông vàng';
     };
-  }, [currentIndex, answers, questions.length]);
+  }, [currentIndex, answers, gameQuestions.length]);
 
-  // 2. Kết thúc lượt chơi: tính điểm, danh hiệu, lưu lịch sử và điều hướng sang /result
   const handleFinishGame = (reason, finalAnswers) => {
     const finalScore = calcScore(finalAnswers);
     const finalRank = getRank(finalScore);
     const correctCount = finalAnswers.filter((a) => a.correct).length;
 
-    // Lưu vào lịch sử
     if (onAddHistory) {
       onAddHistory({
         id: Date.now(),
@@ -78,7 +110,6 @@ const Play = ({ questions = [], playerName = '', onAddHistory }) => {
     });
   };
 
-  // 3. Đồng hồ 20 giây (setInterval, chỉ chạy khi status === "answering")
   useEffect(() => {
     if (status !== 'answering') return;
 
@@ -86,7 +117,6 @@ const Play = ({ questions = [], playerName = '', onAddHistory }) => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timerId);
-          // Hết giờ
           const q = currentQuestionRef.current;
           if (q) {
             const hasLifebuoy = isLifebuoyActiveRef.current;
@@ -117,27 +147,27 @@ const Play = ({ questions = [], playerName = '', onAddHistory }) => {
     };
   }, [status, currentIndex]);
 
-  // 4. Quản lý các bước chờ (status: locked -> 2s -> revealed -> 1.5s -> tiếp theo/kết thúc)
   useEffect(() => {
     let timerId;
 
     if (status === 'locked') {
-      // Chờ 2 giây lộ kết quả
       timerId = setTimeout(() => {
         const q = currentQuestionRef.current;
         const isCorrect = selectedAnswer === q.answer;
         const hasLifebuoy = isLifebuoyActiveRef.current;
+
+        const hasSpeedBonus = speedBonusEnabled && isCorrect && timeLeftRef.current >= 15;
 
         const ans = {
           id: q.id,
           level: q.level,
           correct: isCorrect,
           usedLifebuoy: !isCorrect && hasLifebuoy,
+          speedBonus: hasSpeedBonus ? 5 : 0,
           questionIndex: currentIndexRef.current,
         };
         setAnswers((prevAns) => [...prevAns, ans]);
 
-        // Nếu bật phao thì dù đúng hay sai phao cũng hết hạn cho câu này
         if (hasLifebuoy) {
           setIsLifebuoyActive(false);
         }
@@ -149,28 +179,24 @@ const Play = ({ questions = [], playerName = '', onAddHistory }) => {
         setStatus('revealed');
       }, 2000);
     } else if (status === 'revealed') {
-      // Chờ 1,5 giây
       timerId = setTimeout(() => {
         const latestAnswers = answersRef.current;
         const lastAnswer = latestAnswers[latestAnswers.length - 1];
         const canContinue = lastAnswer ? (lastAnswer.correct || lastAnswer.usedLifebuoy) : false;
 
         if (canContinue) {
-          if (currentIndexRef.current < questions.length - 1) {
-            // Sang câu tiếp theo
+          if (currentIndexRef.current < gameQuestions.length - 1) {
             setCurrentIndex((prev) => prev + 1);
             setSelectedAnswer(null);
             setHiddenAnswerIndex(null);
             setTimeLeft(TIME_PER_QUESTION);
             setStatus('answering');
           } else {
-            // Đã trả lời hết 15 câu
             const hasUsedLifebuoy = latestAnswers.some((a) => a.usedLifebuoy);
             const finishReason = hasUsedLifebuoy ? 'completed' : 'win';
             handleFinishGame(finishReason, latestAnswers);
           }
         } else {
-          // Trả lời sai hoặc hết giờ mà không có phao
           const reason = endReasonRef.current || 'wrong';
           handleFinishGame(reason, latestAnswers);
         }
@@ -180,16 +206,14 @@ const Play = ({ questions = [], playerName = '', onAddHistory }) => {
     return () => {
       if (timerId) clearTimeout(timerId);
     };
-  }, [status, questions.length, selectedAnswer]);
+  }, [status, gameQuestions.length, selectedAnswer, speedBonusEnabled]);
 
-  // 5. Hàm chọn đáp án
   const handleSelectAnswer = (index) => {
     if (status !== 'answering') return;
     setSelectedAnswer(index);
     setStatus('locked');
   };
 
-  // 6. Phím tắt 1, 2, 3, 4 để chọn A, B, C, D
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (status !== 'answering') return;
@@ -197,7 +221,6 @@ const Play = ({ questions = [], playerName = '', onAddHistory }) => {
       const ansIndex = keyMap[e.key];
 
       if (ansIndex !== undefined) {
-        // Phím của đáp án đã bị ẩn thì không có tác dụng
         if (hiddenAnswerIndex !== null && ansIndex === hiddenAnswerIndex) {
           return;
         }
@@ -211,11 +234,9 @@ const Play = ({ questions = [], playerName = '', onAddHistory }) => {
     };
   }, [status, hiddenAnswerIndex]);
 
-  // 7. Xử lý quyền trợ giúp: Loại 1 đáp án
   const handleUse5050 = () => {
     if (usedHelp5050 || status !== 'answering' || !currentQuestion) return;
 
-    // Tìm các đáp án sai của câu hiện tại
     const wrongIndices = currentQuestion.options
       .map((_, idx) => idx)
       .filter((idx) => idx !== currentQuestion.answer);
@@ -225,21 +246,18 @@ const Play = ({ questions = [], playerName = '', onAddHistory }) => {
     setUsedHelp5050(true);
   };
 
-  // 8. Xử lý quyền trợ giúp: Thêm 15 giây
   const handleUseTime = () => {
     if (usedHelpTime || status !== 'answering') return;
     setTimeLeft((prev) => prev + EXTRA_TIME);
     setUsedHelpTime(true);
   };
 
-  // 9. Xử lý quyền trợ giúp: Phao cứu sinh
   const handleUseLifebuoy = () => {
     if (usedHelpLifebuoy || status !== 'answering') return;
     setIsLifebuoyActive(true);
     setUsedHelpLifebuoy(true);
   };
 
-  // Chặn vào thẳng trang thi khi chưa có tên người chơi
   if (!playerName || !playerName.trim()) {
     return <Navigate to="/" replace />;
   }
@@ -256,7 +274,7 @@ const Play = ({ questions = [], playerName = '', onAddHistory }) => {
         score={currentScore}
         currentIndex={currentIndex}
         answers={answers}
-        totalQuestions={questions.length || 15}
+        totalQuestions={gameQuestions.length || 15}
       />
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -277,7 +295,7 @@ const Play = ({ questions = [], playerName = '', onAddHistory }) => {
       <QuestionCard
         question={currentQuestion}
         currentIndex={currentIndex}
-        totalQuestions={questions.length || 15}
+        totalQuestions={gameQuestions.length || 15}
         selectedAnswer={selectedAnswer}
         status={status}
         onSelectAnswer={handleSelectAnswer}

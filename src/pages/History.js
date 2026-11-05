@@ -12,7 +12,6 @@ const History = ({ history = [], onClearHistory }) => {
     );
   }
 
-  // Sắp xếp theo điểm giảm dần trên bản sao mảng
   const sortedHistory = [...history].sort((a, b) => b.score - a.score);
 
   const totalGames = history.length;

@@ -6,7 +6,6 @@ const Result = () => {
   const navigate = useNavigate();
   const state = location.state;
 
-  // Mở /result trực tiếp (không có state) -> chuyển về /
   if (!state) {
     return <Navigate to="/" replace />;
   }
@@ -31,6 +30,14 @@ const Result = () => {
   return (
     <div className="result-page">
       <div className="result-card">
+        {isWin && (
+          <div>
+            <div className="golden-bell" role="img" aria-label="Chiếc chuông vàng">
+              🔔
+            </div>
+          </div>
+        )}
+
         <h2 className="result-title" style={{ color: isWin ? '#16a34a' : '#dc2626' }}>
           {reasonTitle}
         </h2>

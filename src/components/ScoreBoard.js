@@ -24,7 +24,6 @@ const ScoreBoard = ({ score = 0, currentIndex = 0, answers = [], totalQuestions 
             textColor = '#ffffff';
             border = '1px solid #16a34a';
           } else if (isLifebuoy) {
-            // Ô của câu dùng phao có màu cam
             backgroundColor = '#f97316';
             textColor = '#ffffff';
             border = '1px solid #ea580c';

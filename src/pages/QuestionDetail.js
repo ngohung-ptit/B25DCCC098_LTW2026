@@ -46,7 +46,7 @@ const QuestionDetail = ({ questions = [] }) => {
                 className={`detail-option-box ${isCorrect ? 'correct' : ''}`}
               >
                 {LETTERS[index]}. {option}
-                {isCorrect}
+                {isCorrect && ' (Đáp án đúng)'}
               </div>
             );
           })}

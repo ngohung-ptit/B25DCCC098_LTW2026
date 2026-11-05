@@ -11,7 +11,6 @@ const AnswerButton = ({
   disabled,
   isHidden = false,
 }) => {
-  // Đáp án bị ẩn vẫn giữ chỗ trong lưới nhưng không có chữ và không bấm được
   if (isHidden) {
     return (
       <button
@@ -26,27 +25,27 @@ const AnswerButton = ({
           backgroundColor: '#f8fafc',
           cursor: 'not-allowed',
         }}
-      >
-        {/* Rỗng không có chữ */}
-      </button>
+      />
     );
   }
 
   let backgroundColor = '#ffffff';
   let color = '#1e293b';
   let borderColor = '#cbd5e1';
+  let isLockedClass = '';
 
   if (status === 'locked' && isSelected) {
-    backgroundColor = '#fef08a'; // Vàng khi đang chốt
+    backgroundColor = '#fef08a';
     color = '#854d0e';
     borderColor = '#eab308';
+    isLockedClass = 'answer-locked';
   } else if (status === 'revealed') {
     if (isCorrectAnswer) {
-      backgroundColor = '#dcfce7'; // Xanh lá khi đáp án đúng
+      backgroundColor = '#dcfce7';
       color = '#15803d';
       borderColor = '#22c55e';
     } else if (isSelected) {
-      backgroundColor = '#fee2e2'; // Đỏ khi chọn sai
+      backgroundColor = '#fee2e2';
       color = '#b91c1c';
       borderColor = '#ef4444';
     }
@@ -57,7 +56,7 @@ const AnswerButton = ({
   return (
     <button
       type="button"
-      className="answer-btn"
+      className={`answer-btn ${isLockedClass}`}
       onClick={() => onClick(index)}
       disabled={isButtonDisabled}
       style={{

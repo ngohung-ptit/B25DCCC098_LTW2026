@@ -17,7 +17,10 @@ const App = () => {
   const [error, setError] = useState(null);
   const [playerName, setPlayerName] = useState('');
 
-  // Lịch sử lượt chơi: lưu vào localStorage với key ltw_rcv_history
+  const [selectedTopic, setSelectedTopic] = useState('Tất cả');
+  const [shuffleAnswers, setShuffleAnswers] = useState(false);
+  const [speedBonusEnabled, setSpeedBonusEnabled] = useState(false);
+
   const [history, setHistory] = useState(() => {
     try {
       const saved = localStorage.getItem('ltw_rcv_history');
@@ -73,6 +76,12 @@ const App = () => {
               playerName={playerName}
               setPlayerName={setPlayerName}
               history={history}
+              selectedTopic={selectedTopic}
+              setSelectedTopic={setSelectedTopic}
+              shuffleAnswers={shuffleAnswers}
+              setShuffleAnswers={setShuffleAnswers}
+              speedBonusEnabled={speedBonusEnabled}
+              setSpeedBonusEnabled={setSpeedBonusEnabled}
             />
           }
         />
@@ -83,6 +92,9 @@ const App = () => {
               questions={questions}
               playerName={playerName}
               onAddHistory={handleAddHistory}
+              selectedTopic={selectedTopic}
+              shuffleAnswers={shuffleAnswers}
+              speedBonusEnabled={speedBonusEnabled}
             />
           }
         />
